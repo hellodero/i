@@ -1,0 +1,20 @@
+alert icmp any any -> any any (msg:"LOCAL TEST - ICMP ping detected"; sid:1002001; rev:1;)
+ping 127.0.0.1
+
+alert udp any any -> any 53 (msg:"LOCAL TEST - DNS query for eviltest.example detected"; content:"eviltest.example"; nocase; sid:1002002; rev:1;)
+nslookup eviltest.example 8.8.8.8
+
+alert tcp any any -> any 80 (msg:"LOCAL TEST - HTTP GET /testpath detected"; flow:to_server,established; content:"GET"; http_method; content:"/testpath"; http_uri; sid:1002003; rev:1;)
+curl http://127.0.0.1/testpath
+
+alert tcp any any -> any 80 (msg:"LOCAL TEST - HTTP Host header test-host"; flow:to_server,established; content:"Host|3A| test-host"; http_header; sid:1002004; rev:1;)
+curl -H "Host: test-host" http://127.0.0.1/
+
+alert tcp any any -> any 22 (msg:"LOCAL TEST - TCP SYN to port 22 detected"; flags:S; sid:1002005; rev:1;)
+powershell -Command "Test-NetConnection -ComputerName 127.0.0.1 -Port 22"
+
+alert tcp any any -> any 80 (msg:"LOCAL TEST - HTTP User-Agent BadBot"; flow:to_server,established; content:"User-Agent|3A| BadBot"; http_header; sid:1002006; rev:1;)
+curl -A "BadBot" http://127.0.0.1/
+
+alert udp any any -> any any (msg:"LOCAL TEST - UDP payload HELLO_DETECT"; content:"HELLO_DETECT"; sid:1002007; rev:1;)
+powershell -Command "$udp=New-Object System.Net.Sockets.UdpClient; $b=[System.Text.Encoding]::ASCII.GetBytes('HELLO_DETECT'); $udp.Send($b,$b.Length,'127.0.0.1',54321); $udp.Close()"
